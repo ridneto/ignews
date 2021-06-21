@@ -1,4 +1,6 @@
+import axios from 'axios';
 import { signIn, useSession } from 'next-auth/client';
+import { getStripeJS } from '../../services/stripe-js';
 import styles from './styles.module.scss';
 
 interface SubscribeButtonProps {
@@ -8,13 +10,22 @@ interface SubscribeButtonProps {
 export function SubscribeButton( { priceId }: SubscribeButtonProps) {
     const [ session ] = useSession();
 
-    function handleSubscribe(){
+    async function handleSubscribe(){
         if(!session){
             signIn('github');
             return;
         }
+        
+        try {
+            const response = await axios.post('api/subscribe');
+            const { sessionId } = response.data;
 
-        // criação da checkout session
+            const stripe = await getStripeJS();
+
+            await stripe.redirectToCheckout({ sessionId } )
+        } catch (err) {
+            alert(err.message);
+        }
     }
     
     return (
